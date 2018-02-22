@@ -1,0 +1,17 @@
+{
+    "ui": {
+        "port": 3000
+    },
+    "server": {
+        "baseDir": "dist",
+        "routes": {
+            "/node_modules": "node_modules"
+        }
+    },
+    "https": {
+        "key": "./certs/Xserver.key",
+        "cert": "./certs/xlocalshim.crt"
+    },
+    "watch": true,
+    "files": "dist/**/*"
+}
