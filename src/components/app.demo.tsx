@@ -5,7 +5,6 @@ class Chunk {
     range: Word.Range
     text: string
     constructor(t: string, r: Word.Range, _ctx: Word.RequestContext) {
-        r.track()
         this.range = r
         this.text = t
     }
@@ -25,12 +24,14 @@ const getChunks = async () => {
         await context.sync()
         let chunks: Chunk[] = []
         wordRanges.forEach(ranges => ranges.items.forEach(range => {
+            console.log('Tracking')
             range.track()
             context.trace('added range')
             chunks.push(new Chunk(range.text, range, context))
 
         }))
         await context.sync()
+        console.log('End of word.run')
         return chunks
     })
 
