@@ -1,15 +1,6 @@
 import * as React from 'react'
 import { Container, ListGroup, ListGroupItem, Button, Label, Input, ButtonGroup, Row } from 'reactstrap'
 
-class Chunk {
-    range: Word.Range
-    text: string
-    constructor(t: string, r: Word.Range, _ctx: Word.RequestContext) {
-        this.range = r
-        this.text = t
-    }
-}
-
 const getChunks = async () => {
     return await Word.run(async context => {
         let paragraphs = context.document.body.paragraphs.load()
@@ -18,33 +9,32 @@ const getChunks = async () => {
         paragraphs.track()
         paragraphs.items.forEach(paragraph => {
             const ranges = paragraph.getTextRanges([' ', ',', '.', ']', ')'], true)
+            paragraph.track();
+            ranges.track();
             ranges.load('text')
             wordRanges.push(ranges)
         })
         await context.sync()
-        let chunks: Chunk[] = []
+        let chunks: Word.Range[] = []
         wordRanges.forEach(ranges => ranges.items.forEach(range => {
-            console.log('Tracking')
             range.track()
-            context.trace('added range')
-            chunks.push(new Chunk(range.text, range, context))
-
+            chunks.push(range)
         }))
         await context.sync()
-        console.log('End of word.run')
         return chunks
     })
 
 }
 
-interface ChunkControlProps { chunk: Chunk; onSelect: (e: React.MouseEvent<HTMLElement>) => void }
-export const ChunkControl: React.SFC<ChunkControlProps> = ({ chunk, onSelect}) => {
+interface ChunkControlProps { range: Word.Range; onSelect: (e: React.MouseEvent<HTMLElement>) => void }
+export const ChunkControl: React.SFC<ChunkControlProps> = ({ range, onSelect}) => {
     return (
-        <div style={{marginLeft: '0.5em'}}><a href='#' onClick={onSelect}>{chunk.text}</a></div>
+
+        <div style={{marginLeft: '0.5em'}}><a href='#' onClick={onSelect}>{range.text}</a></div>
     )
 }
 
-export class App extends React.Component<{title: string}, {chunks: Chunk[]}> {
+export class App extends React.Component<{title: string}, {chunks: Word.Range[]}> {
     constructor(props, context) {
         super(props, context)
         this.state = { chunks: [] }
@@ -57,15 +47,17 @@ export class App extends React.Component<{title: string}, {chunks: Chunk[]}> {
         this.setState(prev => ({ ...prev, chunks: chunks }))
     }
 
-    onSelectRange(chunk: Chunk) {
+    onSelectRange(range: Word.Range) {
         return async (e: React.MouseEvent<HTMLElement>) => {
             e.preventDefault()
-            await Word.run(chunk.range, async ctx => {
-                chunk.range.select();
-                await ctx.sync().catch(e => {
-                    console.error(e.stack)
-                    console.error(e.debugInfo)
-                })
+            await Word.run(range, async _ctx => {
+                range.font.set({bold: true})
+                range.select()
+                // range.font.set({bold: true})
+                // await ctx.sync().catch(e => {
+                //     console.error(e.stack)
+                //     console.error(e.debugInfo)
+                // })
             })
         }
     }
@@ -73,12 +65,12 @@ export class App extends React.Component<{title: string}, {chunks: Chunk[]}> {
     render() {
         return (
             <Container fluid={true}>
-                <Button color='primary' size='sm' block className='ms-welcome__action' onClick={this.click}>Find Chunks demo</Button>
+                <Button color='primary' size='sm' block className='ms-welcome__action' onClick={this.click}>Find Chunks </Button>
                 <hr/>
                 <ListGroup>
                     {this.state.chunks.map((chunk, idx) => (
                         <ListGroupItem key={idx}>
-                            <ChunkControl  onSelect={this.onSelectRange(chunk)} chunk={chunk}/>
+                            <ChunkControl  onSelect={this.onSelectRange(chunk)} range={chunk}/>
                         </ListGroupItem>
                     ))}
                 </ListGroup>
