@@ -4,15 +4,10 @@ import { Container, ListGroup, ListGroupItem, Button, Label, Input, ButtonGroup,
 class Chunk {
     range: Word.Range
     text: string
-    // context: Word.RequestContext
     constructor(t: string, r: Word.Range, _ctx: Word.RequestContext) {
         r.track()
         this.range = r
         this.text = t
-        // this.range.track()
-        // ctx.trackedObjects.add(r)
-        // r.track()
-        // this.context = ctx
     }
 }
 
@@ -30,9 +25,9 @@ const getChunks = async () => {
         await context.sync()
         let chunks: Chunk[] = []
         wordRanges.forEach(ranges => ranges.items.forEach(range => {
+            range.track()
             context.trace('added range')
             chunks.push(new Chunk(range.text, range, context))
-            console.log('tracking')
 
         }))
         await context.sync()
@@ -47,7 +42,6 @@ export const ChunkControl: React.SFC<ChunkControlProps> = ({ chunk, onSelect}) =
         <div style={{marginLeft: '0.5em'}}><a href='#' onClick={onSelect}>{chunk.text}</a></div>
     )
 }
-declare var OfficeExtension: any;
 
 export class App extends React.Component<{title: string}, {chunks: Chunk[]}> {
     constructor(props, context) {
@@ -65,18 +59,13 @@ export class App extends React.Component<{title: string}, {chunks: Chunk[]}> {
     onSelectRange(chunk: Chunk) {
         return async (e: React.MouseEvent<HTMLElement>) => {
             e.preventDefault()
-            console.log('about to run word.run')
             await Word.run(chunk.range, async ctx => {
-                console.log('about to select')
                 chunk.range.select();
-                console.log('about to sync')
                 await ctx.sync().catch(e => {
                     console.error(e.stack)
                     console.error(e.debugInfo)
                 })
-                console.log('synced')
             })
-            console.log('just ran')
         }
     }
 
